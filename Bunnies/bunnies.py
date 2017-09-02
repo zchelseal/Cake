@@ -1,16 +1,13 @@
+"""
 class Path:
     def __init__(self):
         #self._root = None
         self.vertices = [(0,0)]
         self.wall = None
         #self.last_vertex = (0,0)
+"""
 
-class Vertex:
-    def __init__(self, coord, dist_nowall, dist_wall):
-        self.coordinates = coord    # (x,y)
-        self.dist_nowall = dist_nowall
-        self.dist_wall = dist_wall
-
+"""
 def answer(map):
     # base cases
     h = len(map)
@@ -29,17 +26,50 @@ def answer(map):
         lst_nbours = neighbours(v,w,h,visited, curr_nodes)
 
         pass
+"""
 
-def answer_new(map):
-    MAX = 401  # upper bound on the path length
+class Vertex:   # store these in a matrix
+    def __init__(self, x, y, path_wall, path_nowall):
+        self.x = x
+        self.y = y
+        self.path_wall = path_wall
+        self.path_nowall = path_nowall
+        # self.dist_nowall = dist_nowall
+        # self.dist_wall = dist_wall
 
+MAX = [-1] * 401    # upper bound on the path length
+
+def answer(map):
     # base cases
     h = len(map)
-    if h < 1:
-        return 0
+    if h < 1:   return 0
     w = len(map[0])
-    if w < 1:
-        return 0
+    if w < 1:   return 0
+
+    map_paths = copy_map(h, w)
+
+    x = 0
+    y = 0
+    nbours = neighbours(x, y, w, h, map, map_paths)
+    while 1==1:
+        lst_nextlvl = []
+        for nbour in nbours:
+            x = nbour[0]
+            y = nbour[1]
+            if (x, y) != (w - 1, h - 1):    # reached bottom-right corner
+                break
+            L = neighbours(x, y, w, h, map, map_paths)
+            lst_nextlvl.extend(L)
+        nbours = lst_nextlvl
+
+    lengths = []
+    for c in nbours:
+        v = map_paths[c[1]][c[0]]
+        lengths.append(len(v.path_nowall))
+        lengths.append(len(v.path_wall))
+
+    return min(lengths)
+
 
     # loop
     nodes = {}
@@ -83,10 +113,11 @@ def copy_map(h, w):
     for i in range(h):
         row = []
         for j in range(w):
-            row[j] = None
+            row[j] = Vertex(j, i, None, None)   # FIXME: None later needs case handling
         copy[i] = row
     return copy
 
+"""
 def answer_newer(map):
     # base cases
     h = len(map)
@@ -99,6 +130,25 @@ def answer_newer(map):
     MAX = 401  # magic number by the constrains
     map_nw = copy_map(h, w)
     map_w = copy_map(h, w)
+
+    v = (0,0)
+    nbours = neighbours(v, path)
+    #lst_checked.extend(lst_nbours)
+    #level += 1
+    while v != (w-1,h-1):
+        lst_nextlvl = []
+        for nbour in lst_nbours:
+            L = neighbours(nbour, lst_checked)
+            #if dest in L:
+                #return level + 1
+            else:
+                #lst_checked.extend(L)
+                lst_nextlvl.extend(L)
+        lst_nbours = lst_nextlvl
+        level += 1
+    return level
+
+
 
     # loop
     nodes = {}
@@ -136,8 +186,9 @@ def answer_newer(map):
 
             pass
         pass
+        """
 
-
+"""
 def neighbours(v,w,h,visited, curr_nodes):
     x = v.coordinates[0]
     y = v.coordinates[1]
@@ -159,6 +210,69 @@ def neighbours(v,w,h,visited, curr_nodes):
         pass
 
     return [x for x in L if x is not None and x not in any(lst_visited.coordinates)]
+"""
+
+def neighbours(x, y, w, h, map, map_paths):
+    # need x, y, path_nowall, path_wall from v
+    v = map_paths[y][x]
+    old_path_nw = v.path_nowall
+    old_path_w = v.path_wall
+    L = [top(x,y), left(x,y), bottom(x,y,h), right(x,y,w)]
+    nbours = []
+    for c in L:     # c is a coordinate (i,j)
+        if c is None:   continue
+        c_x = c[0]
+        c_y = c[1]
+        value = map[c_y][c_x]
+
+        new_path_w = old_path_w[:]
+        new_path_nw = old_path_nw[:]
+        """
+        # first check no wall
+        if c not in path_nw:
+            if value == 0:
+                if new_path_nw is not None:
+                    new_path_nw.append(c)   # add to path_nw
+            else:       # value == 1
+                new_path_nw = None      # no no-wall path for this vertex
+                if new_path_w is not None:
+                    new_path_w = path_nw[:] # note: not new_path_nw[:]
+                    new_path_w.append(c) # add to path_nw FIXME: this is a valid 1-wall path
+        # then check wall
+        if c not in path_w:
+            if value == 0:
+                if new_path_w is not None:
+                    new_path_w.append(c)   # add to path_nw
+            else:
+                # two 1's cannot form a valid path
+                new_path_w = None   # FIXME: maybe the condition above did?
+        """
+        if value == 1:
+            new_path_nw = MAX  # no no-wall path for this vertex
+            if old_path_w is not None and c not in old_path_w:     # FIXME: handle None situation
+                new_path_w = MAX    # 2-wall path is invalid
+            if old_path_nw is not None and c not in old_path_nw:    # FIXME: handle None situation
+                new_path_w = old_path_nw[:]  # note: not new_path_nw[:]
+                new_path_w.append(c)    # path_nw + c makes a valid 1-wall path
+        else:       # value == 0
+            if old_path_w is not MAX and c not in old_path_w:   # FIXME: handle None situation
+                new_path_w.append(c)  # add to path_w
+            if old_path_nw is not MAX and c not in old_path_nw: # FIXME: handle None situation
+                new_path_nw.append(c)  # add to path_nw
+
+        # check map_paths to see if there's a shorter path
+        old_v = map_paths[c[1]][c[0]]
+        path_w = new_path_w if len(new_path_w) < len(old_v.path_wall) else old_v.path_wall
+        path_nw = new_path_nw if len(new_path_nw) < len(old_v.path_no_wall) else old_v.path_no_wall
+        new_v = Vertex(c[1],c[0], path_w, path_nw)
+        # add new_v to map_path
+        map_paths[c_y][c_x] = new_v
+        if path_w != MAX or path_nw != MAX:
+            nbours.append(c)
+
+        return nbours
+
+
 
 # helper functions to get neighbours of a vertex
 def top(x,y):
@@ -185,7 +299,7 @@ def right(x,y,w):
     else:
         return x+1,y
 
-
+"""
 def answer(arc, dest):
     lst_checked = [arc]
     level = 0
@@ -207,3 +321,4 @@ def answer(arc, dest):
         lst_nbours = lst_nextlvl
         level += 1
     return level
+"""
