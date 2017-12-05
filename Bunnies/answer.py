@@ -13,46 +13,37 @@ def answer(maze):
     if h < 1:
         return 0
     w = len(maze[0])
-    if h == 1:
-        return len(maze[0])
     if w < 1:
         return 0
-    if w == 1:
-        return h
+    maze_paths = [[Vertex(j, i, None, None) for j in range(w)] for i in range(h)]
 
-    try:
-        maze_paths = [[Vertex(j, i, None, None) for j in range(w)] for i in range(h)]
+    x = 0
+    y = 0
+    maze_paths[y][x].path_nowall = [(x, y)]  # path_no_wall should never be none
+    maze_paths[y][x].path_wall = None  # to show there hasn't been a wall yet
+    nbours = neighbours(x, y, w, h, maze, maze_paths)
+    while nbours != []:
+        lst_nextlvl = []
+        for nbour in nbours:
+            x = nbour[0]
+            y = nbour[1]
+            if (x, y) == (w - 1, h - 1):  # reached bottom-right corner
+                break
+            if (x, y) == (1, 0):  # reached bottom-right corner
+                pass  # for debugging
+            L = neighbours(x, y, w, h, maze, maze_paths)
+            lst_nextlvl.extend([l for l in L if l not in lst_nextlvl])
+        nbours = lst_nextlvl
 
-        x = 0
-        y = 0
-        maze_paths[y][x].path_nowall = [(x, y)]  # path_no_wall should never be none
-        maze_paths[y][x].path_wall = None  # to show there hasn't been a wall yet
-        nbours = neighbours(x, y, w, h, maze, maze_paths)
-        while nbours != []:
-            print(nbours)
-            lst_nextlvl = []
-            for nbour in nbours:
-                x = nbour[0]
-                y = nbour[1]
-                if (x, y) == (w - 1, h - 1):  # reached bottom-right corner
-                    break
-                if (x, y) == (4, 3):  # reached bottom-right corner
-                    pass  # for debugging
-                L = neighbours(x, y, w, h, maze, maze_paths)
-                lst_nextlvl.extend([l for l in L if l not in lst_nextlvl])
-            nbours = lst_nextlvl
-
-        # check 2 nodes closest to bottom-right corner FIXME
-        # check last node?
-        last_v = maze_paths[h - 1][w - 1]
-        if last_v.path_nowall is None:
-            return len(last_v.path_wall)
-        elif last_v.path_wall is None:
-            return len(last_v.path_nowall)
-        else:
-            return min(len(last_v.path_wall), len(last_v.path_nowall))
-    except:
-        return h+w-1
+    # check 2 nodes closest to bottom-right corner FIXME
+    # check last node?
+    last_v = maze_paths[h - 1][w - 1]
+    if last_v.path_nowall is None:
+        return len(last_v.path_wall)
+    elif last_v.path_wall is None:
+        return len(last_v.path_nowall)
+    else:
+        return min(len(last_v.path_wall), len(last_v.path_nowall))
 
 
 def neighbours(x, y, w, h, maze, maze_paths):
@@ -63,7 +54,6 @@ def neighbours(x, y, w, h, maze, maze_paths):
 
     L = [top(x, y), left(x, y), bottom(x, y, h), right(x, y, w)]
     nbours = []
-    #try:
     for c in L:  # c is a coordinate (i,j)
         if c is None:  # already visited in both paths
             continue
@@ -96,15 +86,7 @@ def neighbours(x, y, w, h, maze, maze_paths):
         old_path_w = old_c.path_wall
         old_path_nw = old_c.path_nowall
 
-        if new_path_w is None:
-            path_w = old_path_w
-        elif old_path_w is None or len(new_path_w) < len(old_path_w):
-            path_w = new_path_w
-        else:
-            path_w = old_path_w
-
-        #path_w = new_path_w if old_path_w is None or len(new_path_w) < len(old_path_w) else old_path_w
-        # path_nw cannot be None ever
+        path_w = new_path_w if old_path_w is None or len(new_path_w) < len(old_path_w) else old_path_w
         path_nw = new_path_nw if old_path_nw is None or len(new_path_nw) < len(old_path_nw) else old_path_nw
         new_v = Vertex(c_x, c_y, path_w, path_nw)
 
@@ -117,8 +99,6 @@ def neighbours(x, y, w, h, maze, maze_paths):
             continue
         nbours.append(c)
 
-    #except TypeError:
-        #pass
     return nbours
 
 
@@ -126,17 +106,12 @@ def neighbours(x, y, w, h, maze, maze_paths):
 def top(x, y):
     return None if y == 0 else (x, y - 1)
 
-
 def left(x, y):
     return None if x == 0 else (x - 1, y)
-
 
 def bottom(x, y, h):
     return None if y == h - 1 else (x, y + 1)
 
-
 def right(x, y, w):
     return None if x == w - 1 else (x + 1, y)
 
-a = answer([[0]])
-pass
